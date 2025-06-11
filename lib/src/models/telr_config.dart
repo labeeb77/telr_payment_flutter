@@ -29,7 +29,7 @@ class TelrConfig {
     required this.authKey,
     this.isTestMode = true,
     this.appName = 'Telr Flutter App',
-    this.appVersion = '1.0.0',
+    this.appVersion = '1.1.6',
     this.userId,
     this.appId,
     this.language = 'en',

@@ -4,6 +4,12 @@ import '../models/telr_config.dart';
 import '../models/telr_request.dart';
 
 /// Helper class for building XML requests for Telr API
+import 'dart:math';
+import 'package:xml/xml.dart';
+import '../models/telr_config.dart';
+import '../models/telr_request.dart';
+
+/// Helper class for building XML requests for Telr API
 class XmlBuilderHelper {
   /// Builds payment XML request
   static XmlDocument buildPaymentXml({
@@ -11,6 +17,9 @@ class XmlBuilderHelper {
     required TelrPaymentRequest request,
     required Map<String, String> deviceInfo,
   }) {
+    // Validate required fields
+    _validatePaymentRequest(config, request);
+    
     final builder = XmlBuilder();
     builder.processing('xml', 'version="1.0"');
     
@@ -48,12 +57,12 @@ class XmlBuilderHelper {
         builder.element('version', nest: () {
           builder.text(config.appVersion);
         });
-        if (config.userId != null) {
+        if (config.userId != null && config.userId!.isNotEmpty) {
           builder.element('user', nest: () {
             builder.text(config.userId!);
           });
         }
-        if (config.appId != null) {
+        if (config.appId != null && config.appId!.isNotEmpty) {
           builder.element('id', nest: () {
             builder.text(config.appId!);
           });
@@ -81,11 +90,12 @@ class XmlBuilderHelper {
           builder.text(request.currency.toUpperCase());
         });
         builder.element('amount', nest: () {
-          builder.text(request.formattedAmount);
+          // Ensure proper formatting - this is critical!
+          builder.text(_formatAmount(request.amount));
         });
         
         // Add firstref if save card is enabled and firstRef is provided
-        if (request.saveCard && request.firstRef != null) {
+        if (request.saveCard && request.firstRef != null && request.firstRef!.isNotEmpty) {
           builder.element('firstref', nest: () {
             builder.text(request.firstRef!);
           });
@@ -168,8 +178,32 @@ class XmlBuilderHelper {
     return builder.buildDocument();
   }
 
+  /// Validates payment request data
+  static void _validatePaymentRequest(TelrConfig config, TelrPaymentRequest request) {
+    if (config.storeId.isEmpty) {
+      throw ArgumentError('Store ID cannot be empty');
+    }
+    if (config.authKey.isEmpty) {
+      throw ArgumentError('Auth key cannot be empty');
+    }
+    if (request.amount <= 0) {
+      throw ArgumentError('Amount must be greater than 0');
+    }
+    if (request.currency.isEmpty) {
+      throw ArgumentError('Currency cannot be empty');
+    }
+    if (request.description.isEmpty) {
+      throw ArgumentError('Description cannot be empty');
+    }
+  }
+
+  /// Formats amount to ensure proper decimal places
+  static String _formatAmount(double amount) {
+    return amount.toStringAsFixed(2);
+  }
+
   /// Generates a random cart ID
   static String _generateCartId() {
-    return (100000000 + Random().nextInt(999999999)).toString();
+    return (100000000 + Random().nextInt(899999999)).toString();
   }
 }

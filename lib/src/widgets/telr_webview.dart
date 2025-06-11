@@ -192,50 +192,116 @@ class _TelrWebViewState extends State<TelrWebView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text(
-          'Payment',
-          style: TextStyle(color: Colors.black87),
-        ),
-        leading: TextButton(
-          onPressed: () {
-            widget.onPaymentComplete(
-              TelrPaymentResponse.failure(errorMessage: 'Payment cancelled by user'),
-            );
-            Navigator.of(context).pop();
-          },
-          child: const Text(
-            'Cancel',
-            style: TextStyle(color: Colors.blue),
+    return WillPopScope(
+      onWillPop: () async {
+        // Show confirmation dialog when back button is pressed
+        final shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Cancel Payment?'),
+            content: Text('Are you sure you want to cancel this payment?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('No'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text('Yes'),
+              ),
+            ],
           ),
+        ) ?? false;
+
+        if (shouldPop) {
+          // Show snackbar and return to previous screen
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Payment cancelled by user'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+          widget.onPaymentComplete(
+            TelrPaymentResponse.failure(errorMessage: 'Payment cancelled by user'),
+          );
+        }
+        return shouldPop;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          title: const Text(
+            'Payment',
+            style: TextStyle(color: Colors.black87),
+          ),
+          leading: TextButton(
+            onPressed: () async {
+              // Show confirmation dialog
+              final shouldPop = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('Cancel Payment?'),
+                  content: Text('Are you sure you want to cancel this payment?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text('No'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text('Yes'),
+                    ),
+                  ],
+                ),
+              ) ?? false;
+
+              if (shouldPop) {
+                // Show snackbar and return to previous screen
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Payment cancelled by user'),
+                    backgroundColor: Colors.orange,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+                widget.onPaymentComplete(
+                  TelrPaymentResponse.failure(errorMessage: 'Payment cancelled by user'),
+                );
+                Navigator.of(context).pop();
+              }
+            },
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.blue),
+            ),
+          ),
+          leadingWidth: 80,
         ),
-        leadingWidth: 80,
-      ),
-      body: Stack(
-        children: [
-          WebViewWidget(controller: controller),
-          if (_isProcessing)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(20.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Processing payment...'),
-                      ],
+        body: Stack(
+          children: [
+            WebViewWidget(controller: controller),
+            if (_isProcessing)
+              Container(
+                color: Colors.black54,
+                child: const Center(
+                  child: Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Processing payment...'),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

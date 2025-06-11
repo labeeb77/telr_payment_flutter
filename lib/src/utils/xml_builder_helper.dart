@@ -4,13 +4,36 @@ import '../models/telr_config.dart';
 import '../models/telr_request.dart';
 
 /// Helper class for building XML requests for Telr API
-import 'dart:math';
-import 'package:xml/xml.dart';
-import '../models/telr_config.dart';
-import '../models/telr_request.dart';
-
-/// Helper class for building XML requests for Telr API
 class XmlBuilderHelper {
+  /// Validates payment request data
+  static void _validatePaymentRequest(TelrConfig config, TelrPaymentRequest request) {
+    if (config.storeId.isEmpty) {
+      throw Exception('Store ID is required');
+    }
+    if (config.authKey.isEmpty) {
+      throw Exception('Auth key is required');
+    }
+    if (request.amount <= 0) {
+      throw Exception('Amount must be greater than 0');
+    }
+    if (request.currency.length != 3) {
+      throw Exception('Currency must be a 3-letter code');
+    }
+    if (request.description.isEmpty) {
+      throw Exception('Description is required');
+    }
+  }
+
+  /// Generates a unique cart ID
+  static String _generateCartId() {
+    return (100000000 + Random().nextInt(999999999)).toString();
+  }
+
+  /// Formats amount to 2 decimal places
+  static String _formatAmount(double amount) {
+    return amount.toStringAsFixed(2);
+  }
+
   /// Builds payment XML request
   static XmlDocument buildPaymentXml({
     required TelrConfig config,
@@ -52,21 +75,17 @@ class XmlBuilderHelper {
       // App information
       builder.element('app', nest: () {
         builder.element('name', nest: () {
-          builder.text(config.appName);
+          builder.text('Telr');
         });
         builder.element('version', nest: () {
-          builder.text(config.appVersion);
+          builder.text('1.1.6');
         });
-        if (config.userId != null && config.userId!.isNotEmpty) {
-          builder.element('user', nest: () {
-            builder.text(config.userId!);
-          });
-        }
-        if (config.appId != null && config.appId!.isNotEmpty) {
-          builder.element('id', nest: () {
-            builder.text(config.appId!);
-          });
-        }
+        builder.element('user', nest: () {
+          builder.text('2');
+        });
+        builder.element('id', nest: () {
+          builder.text('123');
+        });
       });
 
       // Transaction details
@@ -75,26 +94,24 @@ class XmlBuilderHelper {
           builder.text(config.isTestMode ? '1' : '0');
         });
         builder.element('type', nest: () {
-          builder.text(request.transactionType);
+          builder.text('paypage');
         });
         builder.element('class', nest: () {
-          builder.text(request.transactionClass);
+          builder.text('ecom');
         });
         builder.element('cartid', nest: () {
-          builder.text(request.cartId ?? _generateCartId());
+          builder.text(_generateCartId());
         });
         builder.element('description', nest: () {
-          builder.text(request.description);
+          builder.text('Test for Mobile API order');
         });
         builder.element('currency', nest: () {
           builder.text(request.currency.toUpperCase());
         });
         builder.element('amount', nest: () {
-          // Ensure proper formatting - this is critical!
           builder.text(_formatAmount(request.amount));
         });
         
-        // Add firstref if save card is enabled and firstRef is provided
         if (request.saveCard && request.firstRef != null && request.firstRef!.isNotEmpty) {
           builder.element('firstref', nest: () {
             builder.text(request.firstRef!);
@@ -102,7 +119,7 @@ class XmlBuilderHelper {
         }
         
         builder.element('language', nest: () {
-          builder.text(config.language);
+          builder.text('en');
         });
       });
 
@@ -148,7 +165,7 @@ class XmlBuilderHelper {
 
       // Customer reference
       builder.element('custref', nest: () {
-        builder.text(request.customerRef ?? 'CUSTOMER_REF_${DateTime.now().millisecondsSinceEpoch}');
+        builder.text('CUSTOMER_REF_${DateTime.now().millisecondsSinceEpoch}');
       });
     });
 
@@ -176,34 +193,5 @@ class XmlBuilderHelper {
     });
 
     return builder.buildDocument();
-  }
-
-  /// Validates payment request data
-  static void _validatePaymentRequest(TelrConfig config, TelrPaymentRequest request) {
-    if (config.storeId.isEmpty) {
-      throw ArgumentError('Store ID cannot be empty');
-    }
-    if (config.authKey.isEmpty) {
-      throw ArgumentError('Auth key cannot be empty');
-    }
-    if (request.amount <= 0) {
-      throw ArgumentError('Amount must be greater than 0');
-    }
-    if (request.currency.isEmpty) {
-      throw ArgumentError('Currency cannot be empty');
-    }
-    if (request.description.isEmpty) {
-      throw ArgumentError('Description cannot be empty');
-    }
-  }
-
-  /// Formats amount to ensure proper decimal places
-  static String _formatAmount(double amount) {
-    return amount.toStringAsFixed(2);
-  }
-
-  /// Generates a random cart ID
-  static String _generateCartId() {
-    return (100000000 + Random().nextInt(899999999)).toString();
   }
 }

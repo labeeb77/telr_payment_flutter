@@ -31,7 +31,7 @@ class TelrConfig {
   const TelrConfig({
     required this.storeId,
     required this.authKey,
-    this.isTestMode = true,
+    this.isTestMode = false,
     this.testCardType,
     this.appName = 'Telr Flutter App',
     this.appVersion = '1.1.6',

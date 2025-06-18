@@ -50,10 +50,7 @@ class _TelrWebViewState extends State<TelrWebView> {
           },
           onPageFinished: (String url) {
             _handlePageFinished(url);
-            // Auto-fill test card details if in test mode
-            if (widget.config.isTestMode) {
-              _injectTestCardDetails();
-            }
+         
           },
         ),
       )
@@ -72,7 +69,7 @@ class _TelrWebViewState extends State<TelrWebView> {
 
   Future<void> _processPaymentCompletion() async {
     if (_isProcessing) return;
-
+    
     setState(() {
       _isProcessing = true;
     });
@@ -84,23 +81,20 @@ class _TelrWebViewState extends State<TelrWebView> {
       );
 
       final response = await NetworkHelper.sendCompletionRequest(completionXml);
-
+      
       if (response == null) {
         widget.onPaymentComplete(
-          TelrPaymentResponse.failure(
-            errorMessage: 'Failed to get completion response',
-          ),
+          TelrPaymentResponse.failure(errorMessage: 'Failed to get completion response'),
         );
         return;
       }
 
       final paymentResponse = _parseCompletionResponse(response);
       widget.onPaymentComplete(paymentResponse);
+
     } catch (e) {
       widget.onPaymentComplete(
-        TelrPaymentResponse.failure(
-          errorMessage: 'Error processing payment: $e',
-        ),
+        TelrPaymentResponse.failure(errorMessage: 'Error processing payment: $e'),
       );
     } finally {
       setState(() {
@@ -111,16 +105,14 @@ class _TelrWebViewState extends State<TelrWebView> {
 
   void _handlePaymentAbort() {
     widget.onPaymentComplete(
-      TelrPaymentResponse.failure(
-        errorMessage: 'Payment was cancelled by user',
-      ),
+      TelrPaymentResponse.failure(errorMessage: 'Payment was cancelled by user'),
     );
   }
 
   TelrPaymentResponse _parseCompletionResponse(String response) {
     try {
       final doc = XmlDocument.parse(response);
-
+      
       // Parse auth section
       final auth = doc.findAllElements('auth').firstOrNull;
       if (auth == null) {
@@ -129,50 +121,36 @@ class _TelrWebViewState extends State<TelrWebView> {
         );
       }
 
-      final status =
-          auth.findAllElements('status').map((node) => node.text).firstOrNull;
-      final message =
-          auth.findAllElements('message').map((node) => node.text).firstOrNull;
-      final code =
-          auth.findAllElements('code').map((node) => node.text).firstOrNull;
-      final ref =
-          auth.findAllElements('ref').map((node) => node.text).firstOrNull;
-
+      final status = auth.findAllElements('status').map((node) => node.text).firstOrNull;
+      final message = auth.findAllElements('message').map((node) => node.text).firstOrNull;
+      final code = auth.findAllElements('code').map((node) => node.text).firstOrNull;
+      final ref = auth.findAllElements('ref').map((node) => node.text).firstOrNull;
+      
       // Parse card details if available
       final card = auth.findAllElements('card').firstOrNull;
       CardInfo? cardInfo;
-
+      
       if (card != null) {
-        final cardNumber =
-            card.findAllElements('number').map((node) => node.text).firstOrNull;
+        final cardNumber = card.findAllElements('number').map((node) => node.text).firstOrNull;
         final expiry = card.findAllElements('expiry').firstOrNull;
         String? expiryMonth;
         String? expiryYear;
-
+        
         if (expiry != null) {
-          expiryMonth =
-              expiry
-                  .findAllElements('month')
-                  .map((node) => node.text)
-                  .firstOrNull;
-          expiryYear =
-              expiry
-                  .findAllElements('year')
-                  .map((node) => node.text)
-                  .firstOrNull;
+          expiryMonth = expiry.findAllElements('month').map((node) => node.text).firstOrNull;
+          expiryYear = expiry.findAllElements('year').map((node) => node.text).firstOrNull;
         }
-
+        
         cardInfo = CardInfo(
           number: cardNumber,
           expiryMonth: expiryMonth,
           expiryYear: expiryYear,
         );
       }
-
+      
       // Parse trace information
-      final trace =
-          doc.findAllElements('trace').map((node) => node.text).firstOrNull;
-
+      final trace = doc.findAllElements('trace').map((node) => node.text).firstOrNull;
+      
       // Create raw response map
       final rawResponse = <String, dynamic>{
         'status': status,
@@ -198,7 +176,7 @@ class _TelrWebViewState extends State<TelrWebView> {
         if (code != null) {
           errorMessage += ' (Code: $code)';
         }
-
+        
         return TelrPaymentResponse.failure(
           errorMessage: errorMessage,
           statusCode: status,
@@ -214,55 +192,30 @@ class _TelrWebViewState extends State<TelrWebView> {
     }
   }
 
-  /// Inject test card details into the payment form
-  void _injectTestCardDetails() {
-    Map<String, String> testCard;
-    
-    if (widget.config.testCardType != null) {
-      // Use specified test card type
-      testCard = TestCardHelper.getTestCard(widget.config.testCardType!) ?? 
-                 TestCardHelper.getRandomSuccessfulCard();
-    } else {
-      // Use random successful test card
-      testCard = TestCardHelper.getRandomSuccessfulCard();
-    }
-    
-    final javascript = TestCardHelper.getTestCardJavaScript(testCard);
-    
-    controller.runJavaScript(javascript).then((_) {
-      print('Test card details injected: ${testCard['description']}');
-    }).catchError((error) {
-      print('Error injecting test card details: $error');
-    });
-  }
+ 
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
         // Show confirmation dialog when back button is pressed
-        final shouldPop =
-            await showDialog<bool>(
-              context: context,
-              builder:
-                  (context) => AlertDialog(
-                    title: Text('Cancel Payment?'),
-                    content: Text(
-                      'Are you sure you want to cancel this payment?',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: Text('No'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: Text('Yes'),
-                      ),
-                    ],
-                  ),
-            ) ??
-            false;
+        final shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Cancel Payment?'),
+            content: Text('Are you sure you want to cancel this payment?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('No'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text('Yes'),
+              ),
+            ],
+          ),
+        ) ?? false;
 
         if (shouldPop) {
           // Show snackbar and return to previous screen
@@ -274,9 +227,7 @@ class _TelrWebViewState extends State<TelrWebView> {
             ),
           );
           widget.onPaymentComplete(
-            TelrPaymentResponse.failure(
-              errorMessage: 'Payment cancelled by user',
-            ),
+            TelrPaymentResponse.failure(errorMessage: 'Payment cancelled by user'),
           );
         }
         return shouldPop;
@@ -284,32 +235,30 @@ class _TelrWebViewState extends State<TelrWebView> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.white,
-          title: const Text('Payment', style: TextStyle(color: Colors.black87)),
+          title: const Text(
+            'Payment',
+            style: TextStyle(color: Colors.black87),
+          ),
           leading: TextButton(
             onPressed: () async {
               // Show confirmation dialog
-              final shouldPop =
-                  await showDialog<bool>(
-                    context: context,
-                    builder:
-                        (context) => AlertDialog(
-                          title: Text('Cancel Payment?'),
-                          content: Text(
-                            'Are you sure you want to cancel this payment?',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: Text('No'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: Text('Yes'),
-                            ),
-                          ],
-                        ),
-                  ) ??
-                  false;
+              final shouldPop = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('Cancel Payment?'),
+                  content: Text('Are you sure you want to cancel this payment?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text('No'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text('Yes'),
+                    ),
+                  ],
+                ),
+              ) ?? false;
 
               if (shouldPop) {
                 // Show snackbar and return to previous screen
@@ -321,14 +270,15 @@ class _TelrWebViewState extends State<TelrWebView> {
                   ),
                 );
                 widget.onPaymentComplete(
-                  TelrPaymentResponse.failure(
-                    errorMessage: 'Payment cancelled by user',
-                  ),
+                  TelrPaymentResponse.failure(errorMessage: 'Payment cancelled by user'),
                 );
                 Navigator.of(context).pop();
               }
             },
-            child: const Text('Cancel', style: TextStyle(color: Colors.blue)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.blue),
+            ),
           ),
           leadingWidth: 80,
         ),
@@ -360,20 +310,3 @@ class _TelrWebViewState extends State<TelrWebView> {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

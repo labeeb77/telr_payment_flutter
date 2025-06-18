@@ -130,6 +130,143 @@ class PaymentScreen extends StatelessWidget {
 }
 ```
 
+### Save Card Functionality
+
+The package supports Telr's save card feature, which allows customers to save their card details for future payments. Here's how to implement it:
+
+#### Step 1: Initial Payment (Save Card)
+
+For the first payment, set `saveCard: true` to enable the save card option:
+
+```dart
+// Initial payment with save card enabled
+final initialRequest = TelrPaymentRequest(
+  amount: 100.0,
+  currency: 'AED',
+  description: 'Initial payment with save card',
+  billingInfo: billingInfo,
+  saveCard: true, // Enable save card option
+);
+
+final response = await TelrPayment.processPayment(
+  context: context,
+  config: config,
+  request: initialRequest,
+);
+
+if (response.isSuccess) {
+  // Store this transaction reference for future saved card payments
+  final savedTransactionRef = response.transactionRef;
+  print('Save this transaction reference: $savedTransactionRef');
+  
+  // Store the transaction reference in your database/app storage
+  await _saveTransactionReference(savedTransactionRef);
+}
+```
+
+#### Step 2: Subsequent Payments (Using Saved Card)
+
+For subsequent payments using the saved card, provide the `firstRef` parameter:
+
+```dart
+// Subsequent payment using saved card
+final savedCardRequest = TelrPaymentRequest(
+  amount: 50.0,
+  currency: 'AED',
+  description: 'Payment using saved card',
+  billingInfo: billingInfo,
+  firstRef: savedTransactionRef, // Reference from initial transaction
+);
+
+final response = await TelrPayment.processPayment(
+  context: context,
+  config: config,
+  request: savedCardRequest,
+);
+```
+
+#### Complete Save Card Implementation Example
+
+```dart
+class PaymentService {
+  // Store transaction references (in production, use secure storage)
+  static final Map<String, String> _savedCards = {};
+
+  // Process initial payment with save card
+  static Future<TelrPaymentResponse> processInitialPayment({
+    required BuildContext context,
+    required TelrConfig config,
+    required TelrPaymentRequest request,
+    required String customerId,
+  }) async {
+    // Use the helper method for initial payment with save card
+    final response = await TelrPayment.processInitialPaymentWithSaveCard(
+      context: context,
+      config: config,
+      request: request,
+    );
+
+    if (response.isSuccess) {
+      // Save the transaction reference for this customer
+      _savedCards[customerId] = response.transactionRef!;
+      print('Card saved for customer $customerId: ${response.transactionRef}');
+    }
+
+    return response;
+  }
+
+  // Process payment using saved card
+  static Future<TelrPaymentResponse> processSavedCardPayment({
+    required BuildContext context,
+    required TelrConfig config,
+    required TelrPaymentRequest request,
+    required String customerId,
+  }) async {
+    final savedTransactionRef = _savedCards[customerId];
+    
+    if (savedTransactionRef == null) {
+      return TelrPaymentResponse.failure(
+        errorMessage: 'No saved card found for this customer',
+      );
+    }
+
+    // Validate the saved transaction reference
+    if (!TelrPayment.isValidSavedCardReference(savedTransactionRef)) {
+      return TelrPaymentResponse.failure(
+        errorMessage: 'Invalid saved card reference',
+      );
+    }
+
+    // Use the helper method for saved card payment
+    return await TelrPayment.processPaymentWithSavedCard(
+      context: context,
+      config: config,
+      request: request,
+      savedTransactionRef: savedTransactionRef,
+    );
+  }
+
+  // Check if customer has saved card
+  static bool hasSavedCard(String customerId) {
+    return _savedCards.containsKey(customerId);
+  }
+
+  // Remove saved card
+  static void removeSavedCard(String customerId) {
+    _savedCards.remove(customerId);
+  }
+}
+```
+
+#### Save Card Flow
+
+1. **Initial Payment**: Set `saveCard: true` to enable the save card option on the payment page
+2. **Store Reference**: Save the transaction reference returned from the successful initial payment
+3. **Subsequent Payments**: Use the stored transaction reference in the `firstRef` parameter
+4. **Pre-filled Form**: When `firstRef` is provided, the payment page will show the saved card details pre-filled
+
+**Note**: The save card functionality requires proper implementation on the Telr merchant account side. Make sure your Telr account is configured to support stored cards.
+
 ### Test Mode with Auto-Filled Test Cards
 
 The package includes a powerful test mode feature that automatically fills test card details when `isTestMode` is enabled:
@@ -268,8 +405,50 @@ Payment request configuration.
 | `currency` | String | Yes | Currency code (3 letters) |
 | `description` | String | Yes | Payment description |
 | `billingInfo` | BillingInfo | Yes | Customer billing information |
-| `saveCard` | bool | No | Save card for future use (default: false) |
-| `firstRef` | String? | No | Reference for saved card |
+| `customerRef` | String? | No | Customer reference identifier |
+| `cartId` | String? | No | Cart ID (auto-generated if not provided) |
+| `transactionType` | String | No | Transaction type (default: 'paypage') |
+| `transactionClass` | String | No | Transaction class (default: 'ecom') |
+| `saveCard` | bool | No | Enable save card option for initial payment (default: false) |
+| `firstRef` | String? | No | Transaction reference from initial saved card payment |
+
+**Save Card Parameters:**
+- `saveCard`: Set to `true` for the initial payment to enable the save card option on the payment page
+- `firstRef`: Provide the transaction reference from the initial saved card payment for subsequent payments using the saved card
+
+### Save Card Helper Methods
+
+The `TelrPayment` class provides helper methods for easier implementation of save card functionality:
+
+#### `processInitialPaymentWithSaveCard()`
+Processes the initial payment with save card option enabled.
+
+```dart
+static Future<TelrPaymentResponse> processInitialPaymentWithSaveCard({
+  required BuildContext context,
+  required TelrConfig config,
+  required TelrPaymentRequest request,
+})
+```
+
+#### `processPaymentWithSavedCard()`
+Processes a payment using a previously saved card.
+
+```dart
+static Future<TelrPaymentResponse> processPaymentWithSavedCard({
+  required BuildContext context,
+  required TelrConfig config,
+  required TelrPaymentRequest request,
+  required String savedTransactionRef,
+})
+```
+
+#### `isValidSavedCardReference()`
+Validates if a transaction reference is valid for saved card payments.
+
+```dart
+static bool isValidSavedCardReference(String transactionRef)
+```
 
 ### BillingInfo
 

@@ -183,4 +183,44 @@ class TelrPayment {
   static bool isTestMode(TelrConfig config) {
     return config.isTestMode;
   }
+
+  /// Process initial payment with save card enabled
+  /// This should be used for the first payment when you want to save the card
+  static Future<TelrPaymentResponse> processInitialPaymentWithSaveCard({
+    required BuildContext context,
+    required TelrConfig config,
+    required TelrPaymentRequest request,
+  }) async {
+    // Enable save card for initial payment
+    final saveCardRequest = request.copyWith(saveCard: true);
+    
+    return await processPayment(
+      context: context,
+      config: config,
+      request: saveCardRequest,
+    );
+  }
+
+  /// Process payment using a previously saved card
+  /// This should be used for subsequent payments using a saved card
+  static Future<TelrPaymentResponse> processPaymentWithSavedCard({
+    required BuildContext context,
+    required TelrConfig config,
+    required TelrPaymentRequest request,
+    required String savedTransactionRef,
+  }) async {
+    // Use the saved transaction reference
+    final savedCardRequest = request.copyWith(firstRef: savedTransactionRef);
+    
+    return await processPayment(
+      context: context,
+      config: config,
+      request: savedCardRequest,
+    );
+  }
+
+  /// Validate if a transaction reference is valid for saved card payments
+  static bool isValidSavedCardReference(String transactionRef) {
+    return transactionRef.isNotEmpty && transactionRef.length >= 10;
+  }
 }

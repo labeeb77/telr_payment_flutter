@@ -112,7 +112,9 @@ class XmlBuilderHelper {
           builder.text(_formatAmount(request.amount));
         });
         
-        if (request.saveCard && request.firstRef != null && request.firstRef!.isNotEmpty) {
+        // Include firstref parameter when provided for saved card payments
+        // According to Telr API docs: https://docs.telr.com/reference/stored-cards-1
+        if (request.firstRef != null && request.firstRef!.isNotEmpty) {
           builder.element('firstref', nest: () {
             builder.text(request.firstRef!);
           });
@@ -163,50 +165,10 @@ class XmlBuilderHelper {
         });
       });
 
-      // Add card details if in test mode
-      if (config.isTestMode) {
-        builder.element('card', nest: () {
-          builder.element('number', nest: () {
-            builder.text('4111111111111111'); // Test Visa card number
-          });
-          builder.element('expiry', nest: () {
-            builder.element('month', nest: () {
-              builder.text('12');
-            });
-            builder.element('year', nest: () {
-              builder.text('25');
-            });
-          });
-          builder.element('cvv', nest: () {
-            builder.text('123');
-          });
-        });
-      }
-
       // Customer reference
       builder.element('custref', nest: () {
         builder.text('CUSTOMER_REF_${DateTime.now().millisecondsSinceEpoch}');
       });
-
-      // Add test card details if in test mode
-      if (config.isTestMode) {
-        builder.element('card', nest: () {
-          builder.element('number', nest: () {
-            builder.text('4111111111111111'); // Test Visa card number
-          });
-          builder.element('expiry', nest: () {
-            builder.element('month', nest: () {
-              builder.text('12');
-            });
-            builder.element('year', nest: () {
-              builder.text('25');
-            });
-          });
-          builder.element('cvv', nest: () {
-            builder.text('123');
-          });
-        });
-      }
     });
 
     return builder.buildDocument();

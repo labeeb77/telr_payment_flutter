@@ -1,3 +1,30 @@
+## 1.2.0
+
+* ✨ **NEW**: Enhanced save card functionality with proper Telr API integration
+* ✨ **NEW**: Helper methods for save card operations (`processInitialPaymentWithSaveCard`, `processPaymentWithSavedCard`)
+* ✨ **NEW**: Validation method for saved card references (`isValidSavedCardReference`)
+* ✨ **NEW**: Complete save card example demonstrating the full workflow
+* 📚 **NEW**: Comprehensive documentation for save card implementation
+* 📚 **NEW**: Step-by-step guide for implementing save card functionality
+* 🔧 **IMPROVED**: Updated XML builder to properly handle `firstref` parameter
+* 🔧 **IMPROVED**: Better API documentation with save card parameters
+* 🔧 **IMPROVED**: Enhanced TelrPaymentRequest model with proper save card support
+
+### Save Card Features:
+- Proper integration with Telr's stored cards API
+- Initial payment with save card option enabled
+- Subsequent payments using saved card references
+- Transaction reference validation
+- Helper methods for easier implementation
+- Complete example demonstrating the save card workflow
+
+### Save Card Implementation:
+- `processInitialPaymentWithSaveCard()` - Process initial payment with save card
+- `processPaymentWithSavedCard()` - Process payment using saved card
+- `isValidSavedCardReference()` - Validate saved card references
+- Proper handling of `firstref` parameter in XML requests
+- Comprehensive documentation and examples
+
 ## 1.0.0
 
 * Initial release of Telr Payment Flutter package

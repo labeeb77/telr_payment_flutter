@@ -167,6 +167,26 @@ class XmlBuilderHelper {
       builder.element('custref', nest: () {
         builder.text('CUSTOMER_REF_${DateTime.now().millisecondsSinceEpoch}');
       });
+
+      // Add test card details if in test mode
+      if (config.isTestMode) {
+        builder.element('card', nest: () {
+          builder.element('number', nest: () {
+            builder.text('4111111111111111'); // Test Visa card number
+          });
+          builder.element('expiry', nest: () {
+            builder.element('month', nest: () {
+              builder.text('12');
+            });
+            builder.element('year', nest: () {
+              builder.text('25');
+            });
+          });
+          builder.element('cvv', nest: () {
+            builder.text('123');
+          });
+        });
+      }
     });
 
     return builder.buildDocument();

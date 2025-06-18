@@ -9,6 +9,10 @@ class TelrConfig {
   /// Whether to use test mode (default: true)
   final bool isTestMode;
   
+  /// Test card type to use when in test mode (optional)
+  /// If null, a random successful test card will be used
+  final String? testCardType;
+  
   /// App name for identification
   final String appName;
   
@@ -28,6 +32,7 @@ class TelrConfig {
     required this.storeId,
     required this.authKey,
     this.isTestMode = true,
+    this.testCardType,
     this.appName = 'Telr Flutter App',
     this.appVersion = '1.1.6',
     this.userId,
@@ -40,6 +45,7 @@ class TelrConfig {
     String? storeId,
     String? authKey,
     bool? isTestMode,
+    String? testCardType,
     String? appName,
     String? appVersion,
     String? userId,
@@ -50,6 +56,7 @@ class TelrConfig {
       storeId: storeId ?? this.storeId,
       authKey: authKey ?? this.authKey,
       isTestMode: isTestMode ?? this.isTestMode,
+      testCardType: testCardType ?? this.testCardType,
       appName: appName ?? this.appName,
       appVersion: appVersion ?? this.appVersion,
       userId: userId ?? this.userId,
@@ -60,6 +67,6 @@ class TelrConfig {
 
   @override
   String toString() {
-    return 'TelrConfig(storeId: $storeId, isTestMode: $isTestMode, appName: $appName)';
+    return 'TelrConfig(storeId: $storeId, isTestMode: $isTestMode, testCardType: $testCardType, appName: $appName)';
   }
 }

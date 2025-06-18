@@ -6,4 +6,5 @@ export 'src/models/telr_request.dart';
 export 'src/models/telr_response.dart';
 export 'src/models/billing_info.dart';
 export 'src/services/telr_service.dart';
-export 'src/widgets/telr_webview.dart'; 
+export 'src/widgets/telr_webview.dart';
+export 'src/utils/test_card_helper.dart'; 

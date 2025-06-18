@@ -5,6 +5,7 @@ import '../models/telr_config.dart';
 import '../models/telr_response.dart';
 import '../services/network_helper.dart';
 import '../utils/xml_builder_helper.dart';
+import '../utils/test_card_helper.dart';
 
 /// WebView widget for handling Telr payment flow
 class TelrWebView extends StatefulWidget {
@@ -49,6 +50,10 @@ class _TelrWebViewState extends State<TelrWebView> {
           },
           onPageFinished: (String url) {
             _handlePageFinished(url);
+            // Auto-fill test card details if in test mode
+            if (widget.config.isTestMode) {
+              _injectTestCardDetails();
+            }
           },
         ),
       )
@@ -188,6 +193,28 @@ class _TelrWebViewState extends State<TelrWebView> {
         errorMessage: 'Error parsing response: $e',
       );
     }
+  }
+
+  /// Inject test card details into the payment form
+  void _injectTestCardDetails() {
+    Map<String, String> testCard;
+    
+    if (widget.config.testCardType != null) {
+      // Use specified test card type
+      testCard = TestCardHelper.getTestCard(widget.config.testCardType!) ?? 
+                 TestCardHelper.getRandomSuccessfulCard();
+    } else {
+      // Use random successful test card
+      testCard = TestCardHelper.getRandomSuccessfulCard();
+    }
+    
+    final javascript = TestCardHelper.getTestCardJavaScript(testCard);
+    
+    controller.runJavaScript(javascript).then((_) {
+      print('Test card details injected: ${testCard['description']}');
+    }).catchError((error) {
+      print('Error injecting test card details: $error');
+    });
   }
 
   @override

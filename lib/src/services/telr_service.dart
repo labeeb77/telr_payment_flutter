@@ -7,6 +7,7 @@ import '../services/device_info_service.dart';
 import '../services/network_helper.dart';
 import '../widgets/telr_webview.dart';
 import '../utils/xml_builder_helper.dart';
+import '../utils/test_card_helper.dart';
 
 /// Main service class for Telr payment processing
 class TelrPayment {
@@ -156,5 +157,30 @@ class TelrPayment {
   /// Validate amount
   static bool isValidAmount(double amount) {
     return amount > 0;
+  }
+
+  /// Get all available test card types
+  static List<String> getAvailableTestCardTypes() {
+    return TestCardHelper.getAllTestCardTypes();
+  }
+
+  /// Get test card details for a specific type
+  static Map<String, String>? getTestCardDetails(String cardType) {
+    return TestCardHelper.getTestCard(cardType);
+  }
+
+  /// Validate if a test card type is valid
+  static bool isValidTestCardType(String cardType) {
+    return TestCardHelper.getTestCard(cardType) != null;
+  }
+
+  /// Get a random successful test card
+  static Map<String, String> getRandomSuccessfulTestCard() {
+    return TestCardHelper.getRandomSuccessfulCard();
+  }
+
+  /// Check if the current configuration is in test mode
+  static bool isTestMode(TelrConfig config) {
+    return config.isTestMode;
   }
 }
